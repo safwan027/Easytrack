@@ -2,7 +2,6 @@ EasyTrack is a lightweight communication management tool designed to bridge the 
 EasyTrack ensures that business conversations stay organized, personal, and efficient.
 
 Key Features
-Seamless WhatsApp Integration: Communicate with clients on the platform they use most, without losing the professional structure of a CRM.
 Precision Ticketing: Our refined ticket creation method ensures that client issues are captured accurately, categorized instantly, and tracked with total clarity.
 Internal Transparency: Give your team a unified view of client history, reducing duplicate work and communication gaps.
 
