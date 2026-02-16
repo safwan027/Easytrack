@@ -1,46 +1,100 @@
 (function () {
+    // 1. DATA INITIALIZATION & SOUND
+    const soundPath = chrome.runtime.getURL("assets/alert.wav");
+    const alertSound = new Audio(soundPath);
+
+    alertSound.volume = 1;
+    alertSound.loop = true;
+
+    // For console testing
+    window.alertSound = alertSound;
+
+    alertSound.oncanplaythrough = () => console.log("✅ Extension audio bundled and ready!");
+    alertSound.onerror = (e) => console.error("❌ Extension audio failed to load:", e);
+
     // 1. DATA INITIALIZATION
     window.myTickets = JSON.parse(localStorage.getItem('wa_tickets')) || [];
     let currentTab = 'All';
 
-    // 2. STYLES
+    // 2. STYLES (Inline CSS)
     const style = document.createElement('style');
     style.textContent = `
-        .tab-btn { padding: 8px 4px; cursor: pointer; border: none; background: none; font-size: 11px; color: #667781; border-bottom: 2px solid transparent; flex: 1; transition: 0.3s; display: flex; flex-direction: column; align-items: center; }
-        .tab-btn.active { color: #008069; border-bottom: 2px solid #008069; font-weight: bold; }
-        .tab-count { font-size: 10px; background: #eee; border-radius: 10px; padding: 1px 6px; margin-top: 2px; color: #667781; }
-        .tab-btn.active .tab-count { background: #008069; color: white; }
-        .ticket-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; transition: background 0.2s; }
-        .ticket-item.priority-high { background-color: #fff1f0; border-left: 4px solid #d32f2f; }
-        .ticket-item:hover { background-color: #f5f6f6; }
-        .ticket-meta-box { flex: 1; cursor: pointer; display: flex; flex-direction: column; overflow: hidden; }
-        .ticket-header-row { display: flex; justify-content: space-between; align-items: center; }
-        .ticket-name-text { font-weight: bold; color: #111b21; font-size: 14px; }
-        .ticket-time-text { font-size: 10px; color: #8696a0; margin-right: 10px; }
-        .ticket-group-text { font-size: 11px; color: #667781; margin-top: 2px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-        .action-btns { display: flex; align-items: center; gap: 8px; }
-        .edit-btn, .priority-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; }
-        .edit-btn { color: #008069; }
-        .priority-btn { color: #ccc; }
-        .priority-btn.active { color: #d32f2f; }
-        #ticket-sidebar-header { cursor: move; user-select: none; background: #008069; color: white; padding: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; }
-        .m-label { display: block; font-size: 13px; color: #54656f; margin-bottom: 4px; font-weight: 600; text-align: left; margin-top: 10px; }
-        
-        /* Sidebar Launcher Style */
-        #easytrack-launcher { position: fixed; left: 0; bottom: 120px; width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; color: #8696a0; margin-left:3px;margin-bottom:11px; }
-        #easytrack-launcher:hover { color: #008069; }
-        #easytrack-launcher svg { width: 24px; height: 24px; fill: currentColor; }
-        #easytrack-launcher span { font-size: 9px; margin-top: 2px; font-weight: 500; }
-        .bell-icon { font-size: 14px; }
-    `;
+            .tab-btn { padding: 8px 4px; cursor: pointer; border: none; background: none; font-size: 11px; color: #667781; border-bottom: 2px solid transparent; flex: 1; transition: 0.3s; display: flex; flex-direction: column; align-items: center; }
+            .tab-btn.active { color: #008069; border-bottom: 2px solid #008069; font-weight: bold; }
+            .tab-count { font-size: 10px; background: #eee; border-radius: 10px; padding: 1px 6px; margin-top: 2px; color: #667781; }
+            .tab-btn.active .tab-count { background: #008069; color: white; }
+            .ticket-item { padding: 12px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: white; transition: background 0.2s; }
+            .ticket-item.priority-high { background-color: #fff1f0; border-left: 4px solid #d32f2f; }
+            .ticket-item:hover { background-color: #f5f6f6; }
+            .ticket-meta-box { flex: 1; cursor: pointer; display: flex; flex-direction: column; overflow: hidden; }
+            .ticket-header-row { display: flex; justify-content: space-between; align-items: center; }
+            .ticket-name-text { font-weight: bold; color: #111b21; font-size: 14px; }
+            .ticket-time-text { font-size: 10px; color: #8696a0; margin-right: 10px; }
+            .ticket-group-text { font-size: 11px; color: #667781; margin-top: 2px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; line-height: 1.3; }
+            .action-btns { display: flex; align-items: center; gap: 8px; }
+            .edit-btn, .priority-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; }
+            .edit-btn { color: #008069; }
+            .priority-btn { color: #ccc; }
+            .priority-btn.active { color: #d32f2f; }
+            #ticket-sidebar-header { cursor: move; user-select: none; background: #008069; color: white; padding: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; }
+            .m-label { display: block; font-size: 13px; color: #54656f; margin-bottom: 4px; font-weight: 600; text-align: left; margin-top: 10px; }
+            
+            /* Launcher Style */
+            #easytrack-launcher { position: fixed; left: 0; bottom: 120px; width: 60px; height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 9999; color: #8696a0; margin-left:3px;margin-bottom:11px; }
+            #easytrack-launcher:hover { color: #008069; }
+            #easytrack-launcher svg { width: 24px; height: 24px; fill: currentColor; }
+            .bell-icon { font-size: 14px; }
+
+            /* Header Title Link Format */
+            .header-title-link { background: none; border: none; color: white; cursor: pointer; font-weight: bold; padding: 0; font-size: 15px; text-decoration: none; font-family: inherit; display: flex; align-items: center; }
+            .header-title-link:hover { text-decoration: underline; }
+
+            /* Independent Popup Modal */
+            #info-modal-overlay {
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.6); z-index: 10005;
+                display: none; justify-content: center; align-items: center;
+            }
+            .info-modal-content {
+                background: white; width: 380px; padding: 25px; border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;
+                font-family: Segoe UI, Helvetica, Arial, sans-serif;
+            }
+            .info-item { margin-bottom: 15px; font-size: 13px; color: #54656f; line-height: 1.4; text-align: left; }
+            .info-item b { color: #008069; display: block; margin-bottom: 3px; font-size: 14px; }
+            .close-info-modal { position: absolute; top: 12px; right: 12px; background: none; border: none; cursor: pointer; font-size: 20px; color: #8696a0; }
+        `;
     document.head.appendChild(style);
 
-    // 3. UI ELEMENTS
+    // 3. UI ELEMENTS - OVERLAY GUIDE
+    const infoModalOverlay = document.createElement('div');
+    infoModalOverlay.id = 'info-modal-overlay';
+    infoModalOverlay.innerHTML = `
+        <div class="info-modal-content">
+            <h2 style="margin-top:0; color:#008069; font-size: 20px;">EasyTrack Functionalities</h2>
+            <div style="margin: 20px 0;">
+                <div class="info-item"><b>➕ Manual Tickets</b>Create personal tasks using the '+' icon in the sidebar.</div>
+                <div class="info-item"><b>🖱️ Context Menu</b>Right-click any message in WhatsApp to instantly turn it into a ticket.</div>
+                <div class="info-item"><b>⏰ Follow-up Alarms</b>Set alert times for follow-ups; we'll play a sound when it's time to check.</div>
+                <div class="info-item"><b>⚠️ Priority Support</b>Highlight urgent tickets to keep them at the top of your list.</div>
+                <div class="info-item"><b>📥 Data Export</b>Download your ticket list as an Excel file from any tab.</div>
+                 <div class="info-item"><b>➜ Ticket Routing</b>Open the chat for which the tickets has been created, At the time when ticket created message is loaded, when you click on the ticket listings it will route to that specific message highlighting them.</div>
+            </div>
+            <button id="info-ok-btn" style="width:100%; padding:10px; background:#008069; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Got it!</button>
+        </div>
+    `;
+    document.body.appendChild(infoModalOverlay);
+
+    const closeInfo = () => infoModalOverlay.style.display = 'none';
+    //infoModalOverlay.querySelector('.close-info-modal').onclick = closeInfo;
+    infoModalOverlay.querySelector('#info-ok-btn').onclick = closeInfo;
+    infoModalOverlay.onclick = (e) => { if(e.target === infoModalOverlay) closeInfo(); };
+
+    // 4. MAIN SIDEBAR UI
     const launcher = document.createElement('div');
     launcher.id = 'easytrack-launcher';
     launcher.title = 'EasyTrack';
-    launcher.innerHTML = `
-        <svg viewBox="0 0 24 24"><path d="M20 12V6H4V12H6V14H4C2.9 14 2 13.1 2 12V6C2 4.9 2.9 4 4 4H20C21.1 4 22 4.9 22 6V12C22 13.1 21.1 14 20 14H18V12H20M17 17H7V15H17V17M17 20H7V18H17V20Z"/></svg>`;
+    launcher.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 12V6H4V12H6V14H4C2.9 14 2 13.1 2 12V6C2 4.9 2.9 4 4 4H20C21.1 4 22 4.9 22 6V12C22 13.1 21.1 14 20 14H18V12H20M17 17H7V15H17V17M17 20H7V18H17V20Z"/></svg>`;
     document.body.appendChild(launcher);
 
     const sidebar = document.createElement('div');
@@ -48,28 +102,27 @@
     Object.assign(sidebar.style, {
         position: 'fixed', top: '60px', right: '20px', width: '340px',
         zIndex: '9998', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', borderRadius: '8px',
-        backgroundColor: 'white', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', display: 'none'
+        backgroundColor: 'white', fontFamily: 'Segoe UI, Helvetica, Arial, sans-serif', display: 'block'
     });
 
     const headerUI = document.createElement('div');
     headerUI.id = 'ticket-sidebar-header';
-    headerUI.innerHTML = '<span>EasyTrack</span>';
+
+    const titleLink = document.createElement('button');
+    titleLink.className = 'header-title-link';
+    titleLink.innerHTML = 'EasyTrack';
+    titleLink.onclick = () => infoModalOverlay.style.display = 'flex';
+
+    headerUI.appendChild(titleLink);
 
     const headerActions = document.createElement('div');
     headerActions.style.display = 'flex';
     headerActions.style.gap = '12px';
-    
-     const CloseBtn = document.createElement('button');
+
+    const CloseBtn = document.createElement('button');
     CloseBtn.innerHTML = 'x';
-    Object.assign(CloseBtn.style, {  background: 'transparent',
-  color: 'white',   // soft red
-  border: 'none',
-  fontSize: '18px',   // slightly smaller
-  cursor: 'pointer',
-  fontWeight: '600',
-  lineHeight: '1',
-  padding: '2px 4px'});
-    CloseBtn.onclick = () => { sidebar.style.display = 'none';}
+    Object.assign(CloseBtn.style, { background: 'transparent', color: 'white', border: 'none', fontSize: '18px', cursor: 'pointer', fontWeight: '600', lineHeight: '1', padding: '2px 4px' });
+    CloseBtn.onclick = () => { sidebar.style.display = 'none'; }
 
     const addBtn = document.createElement('button');
     addBtn.innerHTML = '+';
@@ -87,7 +140,7 @@
         if (ticketsToExport) exportToExcel(ticketsToExport, currentTab);
     };
 
-    headerActions.append(addBtn, exportBtn,CloseBtn);
+    headerActions.append(addBtn, exportBtn, CloseBtn);
     headerUI.appendChild(headerActions);
 
     const tabsContainer = document.createElement('div');
@@ -102,13 +155,13 @@
 
     launcher.onclick = () => sidebar.style.display = sidebar.style.display === 'none' ? 'block' : 'none';
 
+    // Dragging Logic
     let isDragging = false, offset = [0, 0];
     headerUI.onmousedown = (e) => {
         if (e.target.tagName === 'BUTTON') return;
         isDragging = true;
         offset = [sidebar.offsetLeft - e.clientX, sidebar.offsetTop - e.clientY];
     };
-
     document.onmousemove = (e) => {
         if (!isDragging) return;
         let x = Math.min(Math.max(e.clientX + offset[0], 0), window.innerWidth - sidebar.offsetWidth);
@@ -117,7 +170,7 @@
     };
     document.onmouseup = () => isDragging = false;
 
-    // 5. MODAL WITH TIMER AND DELETE
+    // 5. MODAL LOGIC
     const createModal = (data, index = null) => {
         const isEdit = index !== null;
         const existing = document.getElementById('ticket-modal-overlay');
@@ -131,31 +184,31 @@
         Object.assign(form.style, { background: 'white', padding: '20px', borderRadius: '12px', width: '350px' });
 
         form.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h3 style="margin:0; color:#008069;">${isEdit ? 'Edit Ticket' : 'New Ticket'}</h3>
-            </div>
-            <label class="m-label">Ticket Name</label>
-            <input id="m-name" type="text" value="${isEdit ? data.ticketName : 'Ticket ' + (window.myTickets.length + 1)}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-            <label class="m-label">Description</label>
-            <textarea id="m-desc" style="width:100%; height:60px; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; resize:none;">${isEdit ? data.description : data.text}</textarea>
-            <label class="m-label">Status</label>
-            <select id="m-status" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; color:#000; background:#fff; appearance:auto;">
-                ${['Pending', 'Follow ups', 'Completed', 'Holded'].map(s => `<option value="${s}" ${(isEdit ? data.status : "Pending") === s ? "selected" : ""}>${s}</option>`).join('')}
-            </select>
-            <div id="timer-section" style="display:${(isEdit ? data.status : "Pending") === 'Follow ups' ? 'block' : 'none'};">
-                <label class="m-label">Alert Time</label>
-                <input id="m-timer" type="datetime-local" value="${isEdit && data.alertTime ? data.alertTime : ''}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
-            </div>
-            <div style="display:flex; justify-content:flex-start; margin-top:20px;">
-                <div style="display:flex; align-items:center; width:100%;">
-                    ${isEdit ? `<button id="m-delete" style="padding:6px 12px; background:#e53935; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>` : ''}
-                    <div style="margin-left:auto; display:flex; gap:8px;">
-                        <button id="m-cancel" style="padding:6px 12px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
-                        <button id="m-save" style="padding:6px 15px; background:#008069; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Save</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; color:#008069;">${isEdit ? 'Edit Ticket' : 'New Ticket'}</h3>
+                </div>
+                <label class="m-label">Ticket Name</label>
+                <input id="m-name" type="text" value="${isEdit ? data.ticketName : 'Ticket ' + (window.myTickets.length + 1)}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                <label class="m-label">Description</label>
+                <textarea id="m-desc" style="width:100%; height:60px; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; resize:none;">${isEdit ? data.description : data.text}</textarea>
+                <label class="m-label">Status</label>
+                <select id="m-status" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:10px; color:#000; background:#fff; appearance:auto;">
+                    ${['Pending', 'Follow ups', 'Holded', 'Completed'].map(s => `<option value="${s}" ${(isEdit ? data.status : "Pending") === s ? "selected" : ""}>${s}</option>`).join('')}
+                </select>
+                <div id="timer-section" style="display:${(isEdit ? data.status : "Pending") === 'Follow ups' ? 'block' : 'none'};">
+                    <label class="m-label">Alert Time</label>
+                    <input id="m-timer" type="datetime-local" value="${isEdit && data.alertTime ? data.alertTime : ''}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; justify-content:flex-start; margin-top:20px;">
+                    <div style="display:flex; align-items:center; width:100%;">
+                        ${isEdit ? `<button id="m-delete" style="padding:6px 12px; background:#e53935; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>` : ''}
+                        <div style="margin-left:auto; display:flex; gap:8px;">
+                            <button id="m-cancel" style="padding:6px 12px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
+                            <button id="m-save" style="padding:6px 15px; background:#008069; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Save</button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
 
         form.querySelector('#m-status').onchange = (e) => {
             form.querySelector('#timer-section').style.display = e.target.value === 'Follow ups' ? 'block' : 'none';
@@ -175,17 +228,16 @@
         }
 
         form.querySelector('#m-cancel').onclick = () => overlay.remove();
-        form.querySelector('#m-save').onclick = () => {
+
+        const handleSave = () => {
             const statusVal = form.querySelector('#m-status').value;
             const timerVal = form.querySelector('#m-timer').value;
-            
             const ticketObj = {
                 ...data,
                 ticketName: form.querySelector('#m-name').value,
                 description: form.querySelector('#m-desc').value,
                 status: statusVal,
                 alertTime: timerVal,
-                // The bell is active if it's a Follow Up and a time is set
                 isBell: statusVal === 'Follow ups' && timerVal !== '',
                 alertFired: isEdit && data.alertTime === timerVal ? data.alertFired : false,
                 createdTime: isEdit ? data.createdTime : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -195,11 +247,16 @@
             saveAndRefresh();
             overlay.remove();
         };
+
+        form.querySelector('#m-save').onclick = handleSave;
+        form.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave(); }
+        });
     };
 
     const updateSidebar = () => {
         tabsContainer.innerHTML = '';
-        ['All', 'Pending', 'Follow ups', 'Completed', 'Holded'].forEach(status => {
+        ['All', 'Pending', 'Follow ups', 'Holded', 'Completed'].forEach(status => {
             const count = status === 'All' ? window.myTickets.length : window.myTickets.filter(t => t.status === status).length;
             const btn = document.createElement('button');
             btn.className = 'tab-btn' + (currentTab === status ? ' active' : '');
@@ -217,16 +274,16 @@
             const isHigh = t.isPriority && t.status !== 'Completed';
             item.className = `ticket-item ${isHigh ? 'priority-high' : ''}`;
             item.innerHTML = `
-                <div class="ticket-meta-box">
-                    <div class="ticket-header-row"><span class="ticket-name-text">${t.ticketName}</span><span class="ticket-time-text">${t.createdTime}</span></div>
-                    <div class="ticket-group-text">${t.displayName} • ${t.status}</div>
-                </div>
-                <div class="action-btns">
-                    <button class="priority-btn ${isHigh ? 'active' : ''}">${isHigh ? '⚠️' : '⚠'}</button>
-                    <button class="edit-btn">✎</button>
-                    <span class="bell-icon">${t.isBell ? '🔔' : ''}</span>
-                </div>
-            `;
+                    <div class="ticket-meta-box">
+                        <div class="ticket-header-row"><span class="ticket-name-text">${t.ticketName}</span><span class="ticket-time-text">${t.createdTime}</span></div>
+                        <div class="ticket-group-text">${t.displayName} • ${t.status}</div>
+                    </div>
+                    <div class="action-btns">
+                        <button class="priority-btn ${isHigh ? 'active' : ''}">${isHigh ? '⚠️' : '⚠'}</button>
+                        <button class="edit-btn">✎</button>
+                        <span class="bell-icon">${t.isBell ? '🔔' : ''}</span>
+                    </div>
+                `;
             item.querySelector('.ticket-meta-box').onclick = () => window.goToTicket(window.myTickets.indexOf(t));
             item.querySelector('.edit-btn').onclick = () => createModal(t, window.myTickets.indexOf(t));
             item.querySelector('.priority-btn').onclick = () => {
@@ -245,19 +302,24 @@
             if (t.status === 'Follow ups' && t.alertTime && !t.alertFired) {
                 if (new Date(t.alertTime).getTime() <= now) {
                     t.alertFired = true;
+                    window.alertSound.play().catch(e => console.log("Playback delayed until user interaction."));
                     const snooze = confirm(
                         `⏰ Follow-up Reminder\n\nTicket: ${t.ticketName}\nSource: ${t.displayName}\n\nPress OK to Snooze (5m)\nPress Cancel to Stop`
                     );
 
                     if (snooze) {
                         const snoozeMinutes = 5;
+                        window.alertSound.pause();
+                        window.alertSound.currentTime = 0;
                         const newTime = new Date(new Date().getTime() + snoozeMinutes * 60000);
-                        console.log("newTime",newTime);
+                        console.log("newTime", newTime);
                         t.alertTime = newTime;//.toISOString().slice(0, 16);
-                        console.log("t.alertTime",t.alertTime);
+                        console.log("t.alertTime", t.alertTime);
                         t.alertFired = false;
                         t.isBell = true;
                     } else {
+                        window.alertSound.pause();
+                        window.alertSound.currentTime = 0;
                         t.alertTime = null;
                         t.alertFired = true;
                         t.isBell = false;
@@ -269,64 +331,51 @@
     }, 10000);
 
     const saveAndRefresh = () => { localStorage.setItem('wa_tickets', JSON.stringify(window.myTickets)); updateSidebar(); };
+    function pressEscape() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, code: 'Escape', bubbles: true })); }
 
     // 7. OBSERVER
     const observer = new MutationObserver((mutations) => {
         mutations.forEach(m => {
             m.addedNodes.forEach(node => {
                 if (node.nodeType === 1 && node.querySelector('ul')) {
-                    const menu = node.querySelector('ul');
                     const parent = document.querySelector('[data-js-context-icon="true"][aria-expanded="true"]')?.closest('div[data-id]');
                     if (!parent) return;
 
                     const msgId = parent.getAttribute('data-id');
                     const exists = window.myTickets.findIndex(x => x.messageId === msgId);
-
                     const replyLi = document.querySelector('li[role="button"]');
+                    
                     if (replyLi) {
                         const optionDiv = replyLi.parentElement;
                         const scrollContainer = optionDiv.parentElement;
-                        
                         const newOptionDiv = optionDiv.cloneNode(true);
                         const newLi = newOptionDiv.querySelector('li[role="button"]');
 
-if (newLi) {
-  newLi.style.opacity = '1';
-  newLi.style.visibility = 'visible';
-  newLi.style.display = 'flex';   // important for WhatsApp menus
-}
-
-
-                         console.log("newLi",newLi);
-                        //const textSpan = newLi.querySelector('span[dir="auto"]');
-                       const textSpan = [...newLi.querySelectorAll('span')]
-  .find(span => span.getAttribute('aria-hidden') !== 'true');
-
-                        console.log("textSpan",textSpan);
+                          if (newLi) {
+                            newLi.style.opacity = '1';
+                             newLi.style.visibility = 'visible';
+                            newLi.style.display = 'flex';   //important for WhatsApp menus
+                         }
+                        const textSpan = [...newLi.querySelectorAll('span')].find(span => span.getAttribute('aria-hidden') !== 'true');
                         if (textSpan) textSpan.textContent = exists !== -1 ? 'Go to Ticket' : 'Create Ticket';
 
-                        //newLi.replaceWith(newLi.cloneNode(true));
-                        
-                        newOptionDiv.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            if (exists !== -1) {
-                                sidebar.style.display = 'block';
-                                window.goToTicket(exists);
-                            } else {
-                                const latest = document.querySelector('header span[dir="auto"]')?.innerText?.trim() || "Unknown";
-                                createModal({ messageId: msgId, displayName: latest, chatTitle: latest, text: parent.querySelector('.copyable-text span')?.textContent || "" });
+                        newOptionDiv.onclick = (e) => {
+                            e.stopPropagation(); e.preventDefault(); pressEscape();
+                            if (exists !== -1) { sidebar.style.display = 'block'; window.goToTicket(exists); }
+                            else {
+                                const name = document.querySelector('header span[dir="auto"]')?.innerText?.trim() || "Unknown";
+                                createModal({ messageId: msgId, displayName: name, chatTitle: name, text: parent.querySelector('.copyable-text span')?.textContent || "" });
                             }
-                        });
+                        };
                         scrollContainer.appendChild(newOptionDiv);
                     }
                 }
             });
         });
     });
-
     observer.observe(document.body, { childList: true, subtree: true });
 
-    window.goToTicket = async (idx) => {
+        window.goToTicket = async (idx) => {
         const t = window.myTickets[idx];
         if (!t) return;
         sidebar.style.display = 'block';
@@ -355,14 +404,14 @@ if (newLi) {
     updateSidebar();
 
     const exportToExcel = (dataList, tabName) => {
-        if (dataList.length === 0) { alert(`No tickets found in ${tabName} to export.`); return; }
-        let excelData = `<table><tr><th>Ticket Name</th><th>Source</th><th>Time</th><th>Status</th><th>Description</th></tr>`;
+        if (dataList.length === 0) return;
+        let excelData = `<table><tr><th>Name</th><th>Source</th><th>Time</th><th>Status</th><th>Desc</th></tr>`;
         dataList.forEach(t => { excelData += `<tr><td>${t.ticketName}</td><td>${t.displayName}</td><td>${t.createdTime}</td><td>${t.status}</td><td>${t.description}</td></tr>`; });
         excelData += '</table>';
         const blob = new Blob([excelData], { type: 'application/vnd.ms-excel' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `${tabName} Tickets.xls`;
+        link.download = `${tabName}_Tickets.xls`;
         link.click();
     };
 })();
