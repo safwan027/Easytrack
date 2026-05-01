@@ -1,7 +1,12 @@
+
 {
   "manifest_version": 3,
-  "name": "EasyTrack WhatsApp",
-  "version": "1.0",
+  "name": "EasyTrack",
+  "version": "1.1",
+  "permissions": ["offscreen"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
