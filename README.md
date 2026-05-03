@@ -54,4 +54,4 @@ Contributions make the open-source community an amazing place to learn and creat
 ---
 
 ## 📄 License
-Distributed under the MIT License.
+MIT
