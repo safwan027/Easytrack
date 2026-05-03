@@ -121,7 +121,7 @@
     titleLink.innerHTML = 'EasyTrack';
     titleLink.innerHTML = '<span style="font-family: Garet; font-weight: bold;">EasyTrack</span>';
     titleLink.title = 'Click for EasyTrack Guide';
-    titleLink.href = 'https://easytrack27.netlify.app/';
+    titleLink.href = 'https://easytrackio.vercel.app/';
     titleLink.target = '_blank'; // This is the secret sauce for new tabs
     titleLink.rel = 'noopener noreferrer'; // Security best practice for external links
 
