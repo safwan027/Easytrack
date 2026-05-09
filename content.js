@@ -451,21 +451,21 @@
     const saveAndRefresh = () => { localStorage.setItem('wa_tickets', JSON.stringify(window.myTickets)); updateSidebar(); };
     //function pressEscape() { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, code: 'Escape', bubbles: true })); }
     function pressEscape() {
-    const escEvent = new KeyboardEvent('keydown', {
-        key: 'Escape',
-        code: 'Escape',
-        keyCode: 27,
-        which: 27,
-        bubbles: true,
-        cancelable: true
-    });
+        const escEvent = new KeyboardEvent('keydown', {
+            key: 'Escape',
+            code: 'Escape',
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true
+        });
 
-    // Try all possible targets
-    document.activeElement?.dispatchEvent(escEvent);
-    document.body.dispatchEvent(escEvent);
-    document.dispatchEvent(escEvent);
-    window.dispatchEvent(escEvent);
-}
+        // Try all possible targets
+        document.activeElement?.dispatchEvent(escEvent);
+        document.body.dispatchEvent(escEvent);
+        document.dispatchEvent(escEvent);
+        window.dispatchEvent(escEvent);
+    }
 
     // 7. OBSERVER
     // const observer = new MutationObserver((mutations) => {
@@ -622,7 +622,7 @@
                     // const menuOverlay = node.closest('div[style*="z-index"]') || node;
                     // menuOverlay.remove();
 
-   
+
                     menuContainer.appendChild(newBtn);
                 }
             });
@@ -630,8 +630,8 @@
     });
 
     document.addEventListener('keydown', (e) => {
-    console.log('keydown fired, isTrusted:', e.isTrusted, 'key:', e.key);
-});
+        console.log('keydown fired, isTrusted:', e.isTrusted, 'key:', e.key);
+    });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
@@ -681,19 +681,83 @@
 
     updateSidebar();
 
+    // const exportToExcel = (dataList, tabName) => {
+    //     if (dataList.length === 0) {
+    //         alert("No tickets to export in this tab.");
+    //         return;
+    //     }
+
+    //     let excelData = `<table><tr><th>Name</th><th>Source</th><th>Time</th><th>Status</th><th>Desc</th></tr>`;
+    //     dataList.forEach(t => { excelData += `<tr><td>${t.ticketName}</td><td>${t.displayName}</td><td>${t.createdTime}</td><td>${t.status}</td><td>${t.description}</td></tr>`; });
+    //     excelData += '</table>';
+
+    //     const blob = new Blob([excelData], { type: 'application/vnd.ms-excel' });
+    //     const link = document.createElement('a');
+
+    //     link.href = URL.createObjectURL(blob);
+    //     link.download = `${tabName}_Tickets.xls`;
+    //     link.click();
+    // };
     const exportToExcel = (dataList, tabName) => {
         if (dataList.length === 0) {
             alert("No tickets to export in this tab.");
             return;
         }
 
-        let excelData = `<table><tr><th>Name</th><th>Source</th><th>Time</th><th>Status</th><th>Desc</th></tr>`;
-        dataList.forEach(t => { excelData += `<tr><td>${t.ticketName}</td><td>${t.displayName}</td><td>${t.createdTime}</td><td>${t.status}</td><td>${t.description}</td></tr>`; });
-        excelData += '</table>';
-        const blob = new Blob([excelData], { type: 'application/vnd.ms-excel' });
+        // ✅ Step 1: Sanitize all values to prevent formula injection
+        const sanitizeCell = (value) => {
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            // Strip dangerous formula-triggering prefixes
+            const dangerous = ['=', '+', '-', '@', '\t', '\r'];
+            if (dangerous.some(char => str.startsWith(char))) {
+                return `'${str}`; // Apostrophe prefix = plain text in Excel
+            }
+            // Escape HTML entities to prevent XSS if ever rendered
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        };
+
+        // ✅ Step 2: Build clean data array with sanitized values
+        const sanitizedData = dataList.map(t => ({
+            Name: sanitizeCell(t.ticketName),
+            Source: sanitizeCell(t.displayName),
+            Time: sanitizeCell(t.createdTime),
+            Status: sanitizeCell(t.status),
+            Desc: sanitizeCell(t.description),
+        }));
+
+        // ✅ Step 3: Create a real .xlsx file using SheetJS
+        const worksheet = XLSX.utils.json_to_sheet(sanitizedData);
+
+        // ✅ Step 4: Set safe column widths
+        worksheet['!cols'] = [
+            { wch: 30 }, // Name
+            { wch: 20 }, // Source
+            { wch: 20 }, // Time
+            { wch: 15 }, // Status
+            { wch: 50 }, // Desc
+        ];
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Tickets');
+
+        // ✅ Step 5: Export as real .xlsx (not fake HTML-as-xls)
+        const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+        // ✅ Step 6: Clean up object URL to prevent memory leak
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${tabName}_Tickets.xls`;
+        link.href = url;
+        link.download = `${sanitizeCell(tabName)}_Tickets.xlsx`; // Sanitize filename too
         link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000); // ✅ Revoke after download starts
     };
+
 })();
