@@ -524,25 +524,94 @@
                     const msgId = parent.getAttribute('data-id');
                     const parentMsgId = document.querySelector(`[data-id="${msgId}"]`);
                     const stringParentMsgId = parentMsgId ? parentMsgId.outerHTML : "";
-                    console.log("msgId", msgId);
+                    // console.log("msgId", msgId);
                     const exists = window.myTickets.findIndex(x => x.messageId === msgId);
 
-                    const deleteBtn = node.querySelector('li[aria-label="Delete"], [role="menuitem"][aria-label="Delete"]')
-                        || [...node.querySelectorAll('[role="menuitem"]')].find(el => el.textContent.trim() === 'Delete');
-                    console.log("deleteBtn", deleteBtn);
-                    if (!deleteBtn) return;
+                    // const deleteBtn = node.querySelector('li[aria-label="Delete"], [role="menuitem"][aria-label="Delete"]')
+                    //     || [...node.querySelectorAll('[role="menuitem"]')].find(el => el.textContent.trim() === 'Delete');
+                    // // console.log("deleteBtn", deleteBtn);
+                    // if (!deleteBtn) return;
+
+                    // 1. Fetch the button
+                    //         const deleteBtn = node.querySelector('li[aria-label="Delete"], [role="menuitem"][aria-label="Delete"]')
+                    //             || [...node.querySelectorAll('[role="menuitem"]')].find(el => el.textContent.trim() === 'Delete');
+
+                    //         const menuContainer = deleteBtn.parentElement;
+                    //         const newBtn = deleteBtn.cloneNode(true);
+
+                    //         newBtn.setAttribute('aria-label', exists !== -1 ? 'Go to Ticket' : 'Create Ticket');
+                    //         newBtn.style.opacity = '1';
+                    //         newBtn.style.visibility = 'visible';
+                    //         newBtn.style.display = 'flex';
+
+                    //         const textSpan = [...newBtn.querySelectorAll('span')].find(span => span.getAttribute('aria-hidden') !== 'true');
+                    //         if (textSpan) textSpan.textContent = exists !== -1 ? 'Go to Ticket' : 'Create Ticket';
+
+                    //         // 2. Check if the button was successfully found
+                    //         if (deleteBtn) {
+                    //             // 3. Find the existing SVG inside the button
+                    //             const newBtnTextSpan = newBtn.querySelector('span');
+                    //             if (newBtnTextSpan.textContent == "Go to Ticket") {
+                    //                 const oldSvg = newBtn.querySelector('svg');
+
+                    //                 if (oldSvg) {
+                    //                     // Your custom SVG string
+                    //                     // Note: I adjusted the width and height to 18px (from 96px) to match the original template's size 
+                    //                     // so it doesn't break the web app's layout. The viewBox remains 0 0 96 96 to preserve your drawing.
+                    //                     const newSvgString = `
+                    // <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="18" height="18" viewBox="0 0 96 96">
+                    //     <rect x="0" y="0" width="96" height="96" fill="#FFFFFF"></rect>
+                    //     <g transform="translate(24, 60)">
+                    //         <path d="M3.36-11.04Q2.69-11.38 2.69-12 2.69-12.62 3.36-12.96L3.36-12.96 40.08-12.96Q36.67-15.5 34.8-19.1L34.8-19.1Q33.6-21.41 33.22-23.66L33.22-23.66Q33.22-23.76 33.19-23.86 33.17-23.95 33.17-24L33.17-24Q33.17-24.53 34.13-24.53L34.13-24.53Q34.7-24.53 34.87-24.41 35.04-24.29 35.14-23.86L35.14-23.86Q35.28-22.9 35.66-21.89L35.66-21.89Q36.72-18.67 39.17-16.15 41.62-13.63 44.88-12.53L44.88-12.53Q45.31-12.38 45.31-12 45.31-11.62 44.88-11.47L44.88-11.47Q41.62-10.37 39.17-7.85 36.72-5.33 35.66-2.11L35.66-2.11Q35.33-1.1 35.14-0.19L35.14-0.19Q35.04 0.29 34.87 0.41 34.7 0.53 34.13 0.53L34.13 0.53Q33.12 0.53 33.12 0L33.12 0Q33.12-0.14 33.41-1.2L33.41-1.2Q34.9-7.2 40.08-11.04L40.08-11.04 3.36-11.04Z" fill="#404040"></path>
+                    //     </g>
+                    // </svg>`;
+
+                    //                     // 4. Replace the old SVG with your custom one
+                    //                     oldSvg.outerHTML = newSvgString;
+                    //                 }
+                    //             }
+
+
+                    //         }
+
+
+                    const deleteBtn = node.querySelector('li[aria-label="React"], [role="menuitem"][aria-label="React"]')
+                        || [...node.querySelectorAll('[role="menuitem"]')].find(el => el.textContent.trim() === 'React');
+
 
                     const menuContainer = deleteBtn.parentElement;
+
+                    // 1. Clone the button
                     const newBtn = deleteBtn.cloneNode(true);
 
-                    newBtn.setAttribute('aria-label', exists !== -1 ? 'Go to Ticket' : 'Create Ticket');
+                    // Set the state-dependent text once
+                    const btnText = exists !== -1 ? 'Go to Ticket' : 'Create Ticket';
+
+                    // 2. Modify container attributes
+                    newBtn.setAttribute('aria-label', btnText);
                     newBtn.style.opacity = '1';
                     newBtn.style.visibility = 'visible';
                     newBtn.style.display = 'flex';
 
+                    // 3. Update the text span in the newly cloned button
                     const textSpan = [...newBtn.querySelectorAll('span')].find(span => span.getAttribute('aria-hidden') !== 'true');
-                    if (textSpan) textSpan.textContent = exists !== -1 ? 'Go to Ticket' : 'Create Ticket';
+                    if (textSpan) {
+                        textSpan.textContent = btnText;
+                    }
+                    if (deleteBtn) {
+                        // 4. Replace the SVG in the newly cloned button (newBtn)
+                        const oldSvg = newBtn.querySelector('svg');
+                        if (oldSvg) {
+                            const gototicket = `<svg width="19px" height="19px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M8 6L8 2L10 2L16 8L10 14L8 14L8 10L-1.74845e-07 10L-3.01991e-07 6L8 6Z" fill="#FFFFFF"></path> </g></svg>`;
+                            const createticket = `<svg height="19px" width="19px" version="1.1" id="_x32_" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512" xml:space="preserve" fill="#ffffff" stroke="#ffffff"><g id="SVGRepo_bgCarrier" stroke-#ffffffidth="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <style type="text/css"> .st0{fill:#FFFFFF;} </style> <g> <path class="st0" d="M193.845,405.991c-6.248,0-11.324,5.062-11.324,11.318c0,6.255,5.077,11.325,11.324,11.325 c6.256,0,11.325-5.07,11.325-11.325C205.17,411.053,200.101,405.991,193.845,405.991z"></path> <path class="st0" d="M193.845,363.678c-6.248,0-11.324,5.069-11.324,11.325c0,6.248,5.077,11.318,11.324,11.318 c6.256,0,11.325-5.07,11.325-11.318C205.17,368.746,200.101,363.678,193.845,363.678z"></path> <path class="st0" d="M491.425,227.51H205.17h-2.075h-20.575h-79.706H82.241v20.567v211.537v20.575h20.574h79.706h20.575h2.075 h286.254H512v-20.575V248.077V227.51H491.425z M491.425,459.614H205.17c0-6.255-5.069-11.318-11.325-11.318 c-6.248,0-11.324,5.062-11.324,11.318h-79.706V248.077h79.706c0,6.255,5.077,11.318,11.324,11.318 c6.256,0,11.325-5.062,11.325-11.318h286.254V459.614z"></path> <path class="st0" d="M193.845,321.372c-6.248,0-11.324,5.069-11.324,11.324c0,6.248,5.077,11.318,11.324,11.318 c6.256,0,11.325-5.07,11.325-11.318C205.17,326.441,200.101,321.372,193.845,321.372z"></path> <path class="st0" d="M193.845,279.065c-6.248,0-11.324,5.062-11.324,11.318c0,6.256,5.077,11.325,11.324,11.325 c6.256,0,11.325-5.069,11.325-11.325C205.17,284.127,200.101,279.065,193.845,279.065z"></path> <polygon class="st0" points="117.846,196.225 369.458,59.702 449.357,206.934 472.755,206.934 387.535,49.881 377.73,31.811 359.638,41.61 108.048,178.148 106.224,179.133 88.14,188.939 18.084,226.961 0,236.774 9.813,254.859 61.673,350.425 61.673,307.289 27.898,245.046 61.673,226.709 "></polygon> </g> </g></svg>`;
 
+                            if (btnText == "Go to Ticket") {
+                                oldSvg.outerHTML = gototicket;
+                            } else {
+                                oldSvg.outerHTML = createticket;
+                            }
+                        }
+                    }
                     newBtn.onclick = (e) => {
                         e.stopPropagation(); e.preventDefault(); pressEscape();
                         if (exists !== -1) { sidebar.style.display = 'block'; window.goToTicket(exists); }
@@ -668,14 +737,14 @@
 
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.style.backgroundColor = "#fff59d";
-            setTimeout(() => el.style.backgroundColor = "", 2000);
+            el.style.backgroundColor = "#075E54";
+            setTimeout(() => el.style.backgroundColor = "", 1000);
 
             targetInSidebar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            targetInSidebar.style.backgroundColor = "#fff59d";
-            setTimeout(() => targetInSidebar.style.backgroundColor = "", 2000);
+            targetInSidebar.style.backgroundColor = "#075E54";
+            setTimeout(() => targetInSidebar.style.backgroundColor = "", 1000);
         } else {
-            alert("Message not found in the chat. It might have been deleted or the ticket was created before the message loaded. Please scroll through the specific sender chat to load more messages and try again.");
+            alert("Message not found in the chat or it might have been deleted. Please scroll through the specific sender chat to load more messages and try again.");
         }
     };
 
