@@ -15,6 +15,40 @@
     // 1. DATA INITIALIZATION
     window.myTickets = JSON.parse(localStorage.getItem('wa_tickets')) || [];
     let currentTab = 'All';
+    let alertActive = '';
+
+    // chrome.alarms.create('checkAlertAlarm', { periodInMinutes: 1 });
+
+    // // 2. Listen for the alarm
+    // chrome.alarms.onAlarm.addListener((alarm) => {
+    //     if (alarm.name === 'checkAlertAlarm') {
+    //         chrome.storage.local.get(['alertActive'], (result) => {
+    //             alertActive = result.alertActive ?? false;
+    //         });
+    //     }
+    // });
+
+
+    // Run the check immediately on startup, then every 1 minute
+    checkAlertStatus();
+
+    setInterval(checkAlertStatus, 60 * 100);
+
+    function checkAlertStatus() {
+        chrome.storage.local.get(['alertActive'], (result) => {
+            // Fallback to false if the value hasn't been set yet
+            alertActive = result.alertActive ?? false;
+
+            console.log("Checked alertActive status:", alertActive);
+
+            // Your logic that depends on alertActive goes here
+            if (alertActive) {
+                // Do something
+            }
+        });
+    }
+
+
 
     // 2. STYLES (Inline CSS)
     const style = document.createElement('style');
@@ -187,7 +221,7 @@
     document.onmouseup = () => isDragging = false;
 
     // 5. MODAL LOGIC
-    const createModal = (data, index = null) => {
+    const createModal = async (data, index = null) => {
         const isEdit = index !== null;
         const existing = document.getElementById('ticket-modal-overlay');
         if (existing) existing.remove();
@@ -221,9 +255,17 @@
                         <label class="m-label">Alert Time</label>
                         <input id="m-timer" type="datetime-local" value="${data.alertTime ? data.alertTime : ''}" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box;">
                     </div>
+                    
+
+
                     <div style="display:flex; justify-content:flex-start; margin-top:20px;">
                         <div style="display:flex; align-items:center; width:100%;">
                             ${isEdit ? `<button id="m-delete" style="padding:6px 12px; background:#e53935; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>` : ''}
+
+                            <div style="margin-left: 6px;">
+                            ${alertActive == true || data.isBell == true ? `<button id="m-stop-alert" style="padding:6px 12px; background:#e53935; color:white; border:none; border-radius:4px; cursor:pointer;">Stop alert</button>` : ''}
+                            </div>
+
                             <div style="margin-left:auto; display:flex; gap:8px;">
                                 <button id="m-cancel" style="padding:6px 12px; background:#e0e0e0; border:none; border-radius:4px; cursor:pointer;">Cancel</button>
                                 <button id="m-save" style="padding:6px 15px; background:#008069; color:white; border:none; border-radius:4px; cursor:pointer; font-weight:bold;">Save</button>
@@ -233,8 +275,9 @@
                 `;
 
 
-
         form.querySelector('#m-timer').value = data.alertTime ? data.alertTime : '';
+
+
 
         // form.querySelector('#m-name').onchange = (e) => {
         //  const nameInput = form.querySelector('#m-name');
@@ -270,6 +313,94 @@
             };
         }
 
+
+        if (isEdit) {
+            chrome.storage.local.get(['alertActive'], (result) => {
+                console.log("alertActive", alertActive);
+                if (data.isBell == true || result.alertActive) {
+                    //if (result.alertActive) {
+                    alertActive = result.alertActive;
+                    // alertActive = true;
+                    //if (data.isBell == true) {
+                    const stopBtn = document.getElementById('m-stop-alert');
+                    stopBtn.style.display = 'block';
+
+
+                    // const statusText = document.getElementById('status');
+                    // Check if an alert is currently ringing when the user opens the popup
+
+                    // chrome.storage.local.get(['alertActive'], (result) => {
+                    //     if (result.alertActive) {
+                    //         stopBtn.style.display = 'block';
+                    //         // statusText.innerText = "Alert is ringing!";
+                    //     }
+                    // });
+
+                    form.querySelector('#m-stop-alert').onclick = () => {
+                        if (result.alertActive) {
+                            chrome.runtime.sendMessage({ action: "stopAlert" });
+                            chrome.storage.local.set({ alertActive: false });
+                            alertActive = false;
+                        }
+
+                        // chrome.storage.local.get(['alertActive'], (result) => {
+                        //     if (result.alertActive) {
+                        //         stopBtn.style.display = 'block';
+                        //         statusText.innerText = "Alert is ringing!";
+                        //     }
+                        // });
+
+                        data.alertTime = null;
+                        data.alertFired = true;
+                        data.isBell = false;
+                        form.querySelector('#m-stop-alert').style.display = 'none';
+                        saveAndRefresh();
+                        overlay.remove();
+                    };
+
+
+                }
+            });
+        }
+        // if (isEdit) {
+        //     // 1. Fetch the storage state
+        //     chrome.storage.local.get(['alertActive'], (result) => {
+        //         console.log("result", result);
+        //         if (result && result.alertActive) {
+        //             console.log("result.alertActive is true. Showing stop button.");
+
+        //             // Get the stop button (using querySelector on the form for consistency)
+        //             const stopBtn = form.querySelector('#m-stop-alert');
+
+        //             if (stopBtn) {
+        //                 stopBtn.style.display = 'block';
+
+        //                 // 2. Set up the click event handler
+        //                 stopBtn.onclick = () => {
+        //                     // Send message to background to kill the offscreen audio track
+        //                     chrome.runtime.sendMessage({ action: "stopAlert" });
+
+        //                     // Explicitly update storage so other parts of the extension know it's off
+        //                     chrome.storage.local.set({ alertActive: false });
+
+        //                     // Update your local state objects
+        //                     data.isAlertPlaying = false;
+        //                     data.alertTime = null;
+        //                     data.alertFired = true;
+        //                     data.isBell = false;
+
+        //                     // Clean up UI
+        //                     stopBtn.style.display = 'none';
+
+        //                     // Run your saves/closes
+        //                     saveAndRefresh();
+        //                     overlay.remove();
+        //                 };
+        //             }
+        //         }
+        //     });
+        // }
+        //initializeAlertControls();
         form.querySelector('#m-cancel').onclick = () => overlay.remove();
 
         const handleSave = () => {
@@ -287,6 +418,7 @@
                 //createdTime: isEdit ? data.createdTime : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 createdTime: isEdit ? data.createdTime : new Date().toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 //parentdiv: data.parentmssg
+                // isAlertPlaying: false
             };
             if (isEdit) window.myTickets[index] = ticketObj;
             else window.myTickets.push(ticketObj);
@@ -350,6 +482,12 @@
             // console.log("Parent message found:", el);
 
         });
+
+        chrome.storage.local.get(['alertActive'], (result) => {
+            alertActive = result.alertActive;
+            // console.log("alertActive", alertActive);
+        });
+
     };
 
     // 6. TIMER MONITOR
@@ -400,15 +538,20 @@
                 if (new Date(t.alertTime).getTime() <= now) {
                     t.alertFired = true;
                     //window.alertSound.play().catch(e => console.log("Playback delayed until user interaction."));
-                    chrome.runtime.sendMessage({ action: "playAlert" })
+                    chrome.runtime.sendMessage({ action: "playAlert" });
+                    // t.isAlertPlaying = true;
+                    //if (t.isBell == false) { chrome.runtime.sendMessage({ action: "stopAlert" }); }
                     const snooze = confirm(
                         `⏰ Follow-up Reminder\n\nTicket: ${t.ticketName}\nSource: ${t.displayName}\n\nPress OK to Snooze (5m)\nPress Cancel to Stop`
                     );
+
+                    console.log("snooze", snooze);
 
                     if (snooze) {
                         const snoozeMinutes = 5;
                         // window.alertSound.pause();
                         chrome.runtime.sendMessage({ action: "stopAlert" })
+                        //t.isAlertPlaying = false;
                         //window.alertSound.currentTime = 0;
 
                         const newTime = new Date(new Date().getTime() + snoozeMinutes * 60000);
@@ -437,10 +580,14 @@
                     } else {
                         //window.alertSound.pause();
                         chrome.runtime.sendMessage({ action: "stopAlert" })
+                        // t.isAlertPlaying = false;
                         //window.alertSound.currentTime = 0;
                         t.alertTime = null;
                         t.alertFired = true;
                         t.isBell = false;
+                        alertActive = false;
+                        chrome.storage.local.set({ alertActive: false });
+                        saveAndRefresh();
                     }
                     saveAndRefresh();
                 }

@@ -3,7 +3,9 @@
   "name": "EasyTrack",
   "version": "1.3",
   "permissions": [
-    "offscreen"
+    "offscreen",
+    "storage",
+    "alarms"
   ],
   "background": {
     "service_worker": "background.js"
