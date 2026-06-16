@@ -4,8 +4,7 @@
   "version": "1.3",
   "permissions": [
     "offscreen",
-    "storage",
-    "alarms"
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"
